@@ -16,6 +16,7 @@ const navigation = [
   { name: 'Username', href: '/dashboard/username', icon: User },
   { name: 'Email', href: '/dashboard/email', icon: Mail },
   { name: 'Teléfono', href: '/dashboard/phone', icon: Phone },
+  { name: 'Personas', href: '/dashboard/personas', icon: User },
 ]
 
 const tools = [
@@ -38,12 +39,13 @@ export default function DashboardLayout({
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Get user from localStorage
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<any>({ credits: 1000 })
   
   useEffect(() => {
     const storedUser = localStorage.getItem('oryntis_user')
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      const parsedUser = JSON.parse(storedUser)
+      setUser({ ...parsedUser, credits: parsedUser.credits || 1000 })
     }
   }, [])
 
@@ -127,7 +129,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
               <Activity className="w-4 h-4 text-[#00ff41]" />
-              <span className="text-[#00ff41]">Backend conectado</span>
+              <span className="text-[#00ff41]">{user?.credits || 1000} créditos</span>
             </div>
             
             {/* User Menu */}
