@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String?
+  name      String?
+  avatar    String?
+  role      Role     @default(MEMBER)
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  searches  SearchHistory[]
+  sessions  Session[]
+
+  @@index([email])
+  @@index([tenantId])
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  expiresAt    DateTime
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ==================== TENANT (Multi-tenant) ====================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  
+  // Billing
+  stripeCustomerId    String?
+  subscriptionId     String?
+  subscriptionStatus SubscriptionStatus?
+  
+  // Credits
+  creditsMonthly      Int      @default(2500)
+  creditsUsed         Int      @default(0)
+  
+  // Limits
+  maxUsers     Int      @default(5)
+  maxSearches  Int      @default(10000)
+  maxStorage   Int      @default(1073741824) // 1GB
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  searches  SearchHistory[]
+  alerts    Alert[]
+
+  @@index([slug])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+// ==================== OSINT SEARCHES ====================
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  type      SearchType
+  query     String
+  result    Json?
+  credits   Int      @default(1)
+  
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum SearchType {
+  EMAIL
+  USERNAME
+  PHONE
+  DOMAIN
+  IP
+  WHOIS
+}
+
+// ==================== ALERTS ====================
+
+model Alert {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  type      AlertType
+  name      String
+  query     String
+  frequency Frequency @default(INSTANT)
+  
+  // Results
+  lastResult   Json?
+  lastRunAt    DateTime?
+  matchCount   Int      @default(0)
+  
+  // Notifications
+  notifyEmail  Boolean  @default(true)
+  notifySlack  Boolean  @default(false)
+  slackWebhook String?
+  
+  isActive    Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs     AlertRun[]
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+enum AlertType {
+  BREACH
+  DOMAIN
+  KEYWORD
+  BRAND
+}
+
+enum Frequency {
+  INSTANT
+  HOURLY
+  DAILY
+  WEEKLY
+}
+
+model AlertRun {
+  id        String   @id @default(uuid())
+  alertId   String
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  
+  result    Json?
+  matches  Int      @default(0)
+  status    RunStatus @default(SUCCESS)
+  error     String?
+  
+  createdAt DateTime @default(now())
+
+  @@index([alertId])
+  @@index([createdAt])
+}
+
+enum RunStatus {
+  SUCCESS
+  FAILED
+  TIMEOUT
+}
+
+// ==================== PLANS & PRICING ====================
+
+model PlanConfig {
+  id        String   @id @default(uuid())
+  name      Plan     @unique
+  
+  // Credits
+  monthlyCredits  Int      @default(5)  // Default: 5 for Free
+  overageCredits  Int      @default(10) // Cost per credit over limit
+  
+  // Features
+  maxUsers       Int      @default(1)
+  maxSearches    Int      @default(100)
+  maxAlerts      Int      @default(3)
+  apiAccess      Boolean  @default(false)
+  prioritySupport Boolean @default(false)
+  
+  // Pricing
+  monthlyPrice   Int      @default(0)   // Free = 0
+  yearlyPrice    Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

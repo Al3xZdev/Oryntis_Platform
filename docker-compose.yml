@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Frontend
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/node_modules
+    working_dir: /app/apps/web
+    command: npm run dev
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/oryntis
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=oryntis-dev-secret-key-change-for-production
+      - DEBUG=true
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./apps/api:/app/apps/api
+      - /app/node_modules
+    working_dir: /app/apps/api
+    command: npm run dev
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=oryntis
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis for queues
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
