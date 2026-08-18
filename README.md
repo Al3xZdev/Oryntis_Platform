@@ -72,30 +72,6 @@ docker-compose up -d
 # Frontend: pnpm --filter @oryntis web dev
 ```
 
-### Variables de Entorno
-
-```env
-# Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/oryntis
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# JWT
-JWT_SECRET=your-super-secret-key
-
-# Frontend URL
-FRONTEND_URL=http://localhost:3000
-
-# InsForge (Backend-as-a-Service)
-INSFORGE_URL=https://your-project.insforge.app
-INSFORGE_SERVICE_KEY=your-service-key
-
-# OAuth (opcional)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-```
-
 ## 📡 API Endpoints
 
 ### Autenticación
@@ -136,16 +112,6 @@ POST   /api/billing/subscribe  # Suscribirse a plan
 | **Auth** | JWT, OAuth (Google) |
 | **Infra** | Docker, Nginx |
 
-## 📊 Planes
-
-| Feature | Free | Pro | Enterprise |
-|---------|------|-----|------------|
-| Consultas/mes | 2,500 | 50,000 | Ilimitado |
-| Módulos OSINT | 6 | 14 | Todos |
-| Alertas | 3 | 50 | Ilimitado |
-| API Access | ❌ | ✅ | ✅ |
-| Soporte | Comunidad | Email | Prioritario |
-
 ## 🔐 Seguridad
 
 - ✅ Autenticación JWT con refresh tokens
@@ -166,12 +132,6 @@ git commit -m "feat: nueva funcionalidad"
 
 # Push y crear PR
 git push origin main
-```
 
-## 📝 Licencia
-
-MIT License - ver [LICENSE](LICENSE)
-
----
 
 **Oryntis OSINT Platform v2.0.0** - Build with ❤️ by [Kyuler](https://github.com/Kyuler)
